@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open Furniture AI</title>
+    
+    <!-- Умная логика автоматического определения языка -->
+    <script>
+      (function() {
+        // Получаем язык системы/браузера клиента (например, "ru-RU", "en-US", "es-ES")
+        const userLang = navigator.language || navigator.userLanguage;
+        // Отрезаем регион, оставляем только базу (ru, en, es, zh)
+        const baseLang = userLang ? userLang.split('-')[0] : 'en';
+        // Мгновенно меняем атрибут lang у HTML-тега
+        document.documentElement.lang = baseLang;
+        
+        // Сохраняем определенный язык в память браузера, чтобы наш UI с флагами потом его подхватил
+        localStorage.setItem('app_language', baseLang);
+      })();
+    </script>
+
+    <style>
+      body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #202020; font-family: sans-serif; }
+      #root { width: 100%; height: 100%; display: flex; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
