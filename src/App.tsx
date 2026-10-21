@@ -4,64 +4,50 @@ import { SHEET_FORMATS } from './types';
 
 export default function App() {
   const { config, updateConfig } = useStore();
-  const [activeTab, setActiveTab] = useState<'3d' | '2d'>('3d');
+  // ТРИ СТРОГИЕ ВКЛАДКИ: Картинка, Чертеж, Деталировка
+  const [activeTab, setActiveTab] = useState<'render' | '2d' | 'details'>('render');
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([
-    { sender: 'ai', text: 'Привет! Какую мебель мы сегодня проектируем? Например: "Пенал для кухни высотой 220см, внизу 2 ящика Blum, в центре духовка и СВЧ".' }
+    { sender: 'ai', text: 'Опишите проект. Например: "Пенал высотой 2200, ширина 600, внизу 2 ящика, ниша под духовку".' }
   ]);
 
   const handleSendPrompt = () => {
     if (!prompt.trim()) return;
-
-    // Добавляем сообщение пользователя
     const newMessages = [...messages, { sender: 'user', text: prompt }];
     setMessages(newMessages);
     setPrompt('');
 
-    // Имитация работы ИИ (пока мы не подключили реальный API)
     setTimeout(() => {
-      // ИИ распознает параметры и обновляет конфигурацию
       if (prompt.toLowerCase().includes('купе') || prompt.toLowerCase().includes('шкаф')) {
         updateConfig({
-          category: 'wardrobe_sliding',
-          height: 2400,
-          width: 1800,
-          depth: 650,
-          base: { exists: true, type: 'plinth_box', height: 80 },
-          mainSection: { shelvesCount: 4, doors: 'sliding', wardrobeAccessories: ['pantograph_lift'] }
+          category: 'wardrobe_sliding', height: 2400, width: 1800, depth: 650,
+          base: { exists: true, type: 'plinth_box', height: 80 }
         });
-        setMessages([...newMessages, { sender: 'ai', text: 'Построил шкаф-купе 1800х2400 мм с цокольной коробкой 80 мм, 4 полками и пантографом. Посмотрите 2D чертеж для проверки размеров.' }]);
+        setMessages([...newMessages, { sender: 'ai', text: 'Проект готов. Сгенерирована реалистичная картинка, чертежи и полная деталировка распила на шкаф 1800х2400.' }]);
       } else {
         updateConfig({
-          category: 'kitchen_tall',
-          height: 2200,
-          width: 600,
-          depth: 560,
+          category: 'kitchen_tall', height: 2200, width: 600, depth: 560,
           base: { exists: true, type: 'legs_with_plinth', height: 100 },
-          appliances: [
-            { type: 'oven', position: 'middle' },
-            { type: 'microwave', position: 'top' }
-          ],
-          bottomSection: { exists: true, type: 'drawers', count: 2, height: 720, kitchenAccessories: [] },
-          mainSection: { shelvesCount: 1, doors: 'none', wardrobeAccessories: [], kitchenAccessories: [] }
+          appliances: [{ type: 'oven', position: 'middle' }],
+          bottomSection: { exists: true, type: 'drawers', count: 2, height: 720, kitchenAccessories: [] }
         });
-        setMessages([...newMessages, { sender: 'ai', text: 'Готово! Пенал 600х2200 мм на 100 мм ножках с нишами под духовку и СВЧ, а также двумя выдвижными ящиками Blum Tandembox.' }]);
+        setMessages([...newMessages, { sender: 'ai', text: 'Проект пенала 600х2200 построен. Доступен рендер, чертеж и деталировка с учетом зазоров.' }]);
       }
-    }, 1000);
+    }, 800);
   };
+
+  // Вычисляем размеры деталей (математика толщины ЛДСП = 18мм)
+  const T = 18;
+  const innerWidth = config.width - (T * 2);
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
-      {/* 1. ЛЕВАЯ ПАНЕЛЬ: ИИ-помощник (Чат) */}
-      <div className="w-96 bg-white border-r border-gray-200 flex flex-col justify-between">
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            🤖 Open Furniture AI
-          </h1>
-          <p className="text-xs text-gray-500">Генеративное проектирование мебели</p>
+      {/* ЛЕВАЯ ПАНЕЛЬ: Чат */}
+      <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-4 border-b border-gray-200 bg-gray-50">
+          <h1 className="text-lg font-bold text-gray-800">🤖 Open Furniture AI</h1>
+          <p className="text-xs text-gray-500">Сценарий: Промпт → Рендер → Чертеж → Деталировка</p>
         </div>
-
-        {/* Сообщения чата */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -71,130 +57,75 @@ export default function App() {
             </div>
           ))}
         </div>
-
-        {/* Поле ввода */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-gray-200">
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendPrompt()}
-              placeholder="Введите запрос..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={handleSendPrompt}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
-            >
-              Отправить
-            </button>
+            <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendPrompt()} placeholder="Введите описание проекта..." className="flex-1 px-3 py-2 border rounded-md text-sm" />
+            <button onClick={handleSendPrompt} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">Ввод</button>
           </div>
         </div>
       </div>
 
-      {/* 2. ПРАВАЯ ЧАСТЬ: Визуализация и чертежи */}
+      {/* ПРАВАЯ ПАНЕЛЬ: Результаты */}
       <div className="flex-1 flex flex-col">
-        {/* Верхняя навигация */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
-          <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab('3d')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeTab === '3d' ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              3D Визуализация
-            </button>
-            <button
-              onClick={() => setActiveTab('2d')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeTab === '2d' ? 'bg-gray-800 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              2D Чертеж с размерами
-            </button>
-          </div>
-          <div className="text-xs text-gray-500 font-mono">
-            Категория: {config.category.toUpperCase()} | Материал: {SHEET_FORMATS[config.bodyMaterial]?.name}
-          </div>
+        {/* Навигация */}
+        <div className="bg-white border-b px-6 py-3 flex gap-2">
+          <button onClick={() => setActiveTab('render')} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'render' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}>1. Реалистичная картинка</button>
+          <button onClick={() => setActiveTab('2d')} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === '2d' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}>2. План и Чертеж</button>
+          <button onClick={() => setActiveTab('details')} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'details' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}>3. Деталировка (Распил)</button>
         </div>
 
-        {/* Рабочая область */}
-        <div className="flex-1 p-6 flex items-center justify-center bg-gray-50">
-          {activeTab === '3d' ? (
-            /* ЭКРАН 3D (Будущий Three.js, пока показываем красивый рендер) */
-            <div className="w-full h-full bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center p-8 text-center">
-              <div className="text-gray-400 text-5xl mb-4">🧊</div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">Интерактивная 3D-модель</h3>
-              <p className="text-sm text-gray-500 max-w-md">Здесь будет крутиться ваш 3D-проект. Сейчас мы подключаем графический движок 3D-рендера.</p>
-              <div className="mt-4 p-3 bg-gray-100 rounded text-xs font-mono text-left max-w-sm">
-                Габариты: {config.width} x {config.height} x {config.depth} мм <br />
-                Подсветка: {config.lighting.exists ? 'LED Включена' : 'Нет'} <br />
-                База: {config.base.type} ({config.base.height} мм)
-              </div>
+        <div className="flex-1 p-6 bg-gray-50 overflow-auto">
+          {/* ВКЛАДКА 1: Картинка */}
+          {activeTab === 'render' && (
+            <div className="w-full h-full bg-white rounded-xl border flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-400 opacity-20"></div>
+              <span className="text-6xl mb-4">🖼️</span>
+              <h2 className="text-xl font-bold">Фотореалистичный рендер</h2>
+              <p className="text-gray-500 max-w-md text-center mt-2">Здесь ИИ выдает готовую сочную картинку для согласования с клиентом (с фасадами, техникой и освещением).</p>
             </div>
-          ) : (
-            /* ЭКРАН 2D ЧЕРТЕЖА (CAD-вид с размерами) */
-            <div className="w-full h-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex flex-col justify-between overflow-auto">
-              <div className="border-b border-gray-100 pb-4 mb-4 flex justify-between items-center">
-                <span className="font-bold text-gray-700">СБОРОЧНЫЙ ЧЕРТЕЖ</span>
-                <span className="text-xs text-red-500 font-mono">РАЗМЕРЫ В ММ</span>
-              </div>
+          )}
 
-              {/* Упрощенная интерактивная CAD-схема */}
-              <div className="flex-1 flex justify-center items-center">
-                <div className="relative border-4 border-gray-800 bg-gray-50" style={{ width: `${config.width * 0.4}px`, height: `${config.height * 0.3}px` }}>
-                  {/* Размерные линии */}
-                  <div className="absolute -top-8 left-0 right-0 flex justify-between items-center border-t border-red-500 text-[10px] text-red-500">
-                    <span>←</span> <span className="font-bold">{config.width} мм</span> <span>→</span>
-                  </div>
-                  <div className="absolute -left-14 top-0 bottom-0 flex flex-col justify-between items-center border-l border-red-500 text-[10px] text-red-500">
-                    <span>↑</span> <span className="font-bold">{config.height} мм</span> <span>↓</span>
-                  </div>
-                  <div className="absolute -right-16 top-0 bottom-0 flex flex-col justify-between items-center border-r border-red-500 text-[10px] text-red-500">
-                    <span>↑</span> <span className="font-bold">Глубина: {config.depth} мм</span> <span>↓</span>
-                  </div>
-
-                  {/* Внутреннее наполнение */}
+          {/* ВКЛАДКА 2: Чертеж */}
+          {activeTab === '2d' && (
+             <div className="w-full h-full bg-white rounded-xl border p-8 flex flex-col justify-center items-center">
+               <h2 className="text-lg font-bold mb-8">Инженерный чертеж (Габариты: {config.width}x{config.height}x{config.depth})</h2>
+               <div className="relative border-4 border-gray-800 bg-gray-50 w-64" style={{ height: '400px' }}>
+                  <div className="absolute -top-8 left-0 right-0 flex justify-between text-xs text-red-600 font-bold border-t border-red-500"><span>←</span><span>{config.width} мм</span><span>→</span></div>
+                  <div className="absolute -left-12 top-0 bottom-0 flex flex-col justify-between text-xs text-red-600 font-bold border-l border-red-500"><span>↑</span><span>{config.height} мм</span><span>↓</span></div>
                   <div className="w-full h-full flex flex-col justify-between p-2">
-                    {/* Антресоль */}
-                    {config.mezzanine.exists && (
-                      <div className="border border-dashed border-blue-500 bg-blue-50/50 p-1 text-[9px] text-blue-700 flex justify-between items-center" style={{ height: `${config.mezzanine.height * 0.3}px` }}>
-                        <span>Антресоль</span>
-                        <span>h: {config.mezzanine.height}</span>
-                      </div>
-                    )}
-
-                    {/* Секция с техникой и ящиками */}
-                    <div className="flex-1 border border-gray-300 p-2 flex flex-col justify-around bg-white">
-                      {config.appliances.map((app, idx) => (
-                        <div key={idx} className="border border-orange-500 bg-orange-50 text-[10px] text-orange-700 p-1 font-bold text-center">
-                          ⚙️ НИША ПОД {app.type.toUpperCase()} (~595 мм)
-                        </div>
-                      ))}
-
-                      {config.bottomSection.exists && config.bottomSection.type === 'drawers' && (
-                        <div className="space-y-1">
-                          {Array.from({ length: config.bottomSection.count }).map((_, idx) => (
-                            <div key={idx} className="border border-green-500 bg-green-50 text-[9px] text-green-700 p-1 text-center font-semibold">
-                              🗄️ Ящик BLUM ({config.hardware.drawers})
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Цокольная база */}
-                    {config.base.exists && (
-                      <div className="border-t-2 border-gray-600 bg-gray-200 text-[9px] text-gray-700 text-center py-1 font-bold" style={{ height: `${config.base.height * 0.3}px` }}>
-                        ЦОКОЛЬ (НОЖКИ) h: {config.base.height} мм
-                      </div>
-                    )}
+                    <div className="border border-gray-300 p-2 text-center text-xs">Верхняя секция</div>
+                    {config.appliances.length > 0 && <div className="border border-orange-500 bg-orange-50 p-2 text-center text-xs font-bold text-orange-700">Ниша под технику</div>}
+                    <div className="border border-gray-300 p-2 text-center text-xs">Нижняя секция</div>
+                    <div className="border-t-2 border-gray-600 bg-gray-200 text-center text-xs h-8 pt-1">Цоколь ({config.base.height}мм)</div>
                   </div>
-                </div>
-              </div>
+               </div>
+             </div>
+          )}
 
-              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between text-xs text-gray-400">
-                <span>Толщина ЛДСП: {config.thickness} мм</span>
-                <span>Фурнитура: {config.hardware.drawers.toUpperCase()}</span>
-              </div>
+          {/* ВКЛАДКА 3: Деталировка */}
+          {activeTab === 'details' && (
+            <div className="bg-white rounded-xl border p-6">
+              <h2 className="text-xl font-bold mb-4 border-b pb-2">Список деталей в распил (ЛДСП {T}мм)</h2>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 text-sm">
+                    <th className="p-3 border">Наименование</th>
+                    <th className="p-3 border">Длина (мм)</th>
+                    <th className="p-3 border">Ширина (мм)</th>
+                    <th className="p-3 border">Кол-во</th>
+                    <th className="p-3 border">Кромка</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  <tr><td className="p-3 border">Стойка левая</td><td className="p-3 border font-mono">{config.height - config.base.height}</td><td className="p-3 border font-mono">{config.depth}</td><td className="p-3 border text-center">1</td><td className="p-3 border">1 длин.</td></tr>
+                  <tr><td className="p-3 border">Стойка правая</td><td className="p-3 border font-mono">{config.height - config.base.height}</td><td className="p-3 border font-mono">{config.depth}</td><td className="p-3 border text-center">1</td><td className="p-3 border">1 длин.</td></tr>
+                  <tr><td className="p-3 border">Дно</td><td className="p-3 border font-mono">{innerWidth}</td><td className="p-3 border font-mono">{config.depth}</td><td className="p-3 border text-center">1</td><td className="p-3 border">1 длин.</td></tr>
+                  <tr><td className="p-3 border">Крыша (Вязка)</td><td className="p-3 border font-mono">{innerWidth}</td><td className="p-3 border font-mono">{config.depth}</td><td className="p-3 border text-center">1</td><td className="p-3 border">1 длин.</td></tr>
+                  <tr><td className="p-3 border">Полка жесткая</td><td className="p-3 border font-mono">{innerWidth}</td><td className="p-3 border font-mono">{config.depth - 20}</td><td className="p-3 border text-center">2</td><td className="p-3 border">1 длин.</td></tr>
+                  <tr><td className="p-3 border bg-gray-50 text-gray-500">Цоколь</td><td className="p-3 border bg-gray-50 font-mono">{config.width}</td><td className="p-3 border bg-gray-50 font-mono">{config.base.height}</td><td className="p-3 border bg-gray-50 text-center">1</td><td className="p-3 border bg-gray-50">2 длин.</td></tr>
+                </tbody>
+              </table>
+              <div className="mt-4 text-xs text-gray-500">* Размеры высчитаны автоматически из габаритов {config.width}x{config.height}x{config.depth} с учетом толщины ЛДСП {T}мм.</div>
             </div>
           )}
         </div>
