@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: true, // Эта строка разрешает любые адреса CodeSandbox
     proxy: {
-      // Этот блок будет незаметно перенаправлять запросы на сервер OpenAI
       '/api/openai': {
         target: 'https://api.openai.com',
         changeOrigin: true,
