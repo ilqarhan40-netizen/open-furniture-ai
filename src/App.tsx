@@ -19,7 +19,6 @@ export default function App() {
     setImageUrl('');
     setStatus('Подключение к OpenAI...');
     
-    // Получаем ключ из скрытого файла .env
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -29,9 +28,9 @@ export default function App() {
     }
 
     try {
-      // 1. ИИ АНАЛИЗИРУЕТ ТЕКСТ И ВЫДАЕТ ТОЧНЫЕ РАЗМЕРЫ В JSON
       setStatus('Шаг 1: ИИ анализирует параметры и математику...');
-      const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      // ИСПОЛЬЗУЕМ ПРОКСИ ВМЕСТО ПРЯМОЙ ССЫЛКИ
+      const chatRes = await fetch('/api/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
@@ -50,9 +49,9 @@ export default function App() {
       const parsed = JSON.parse(content);
       setConfig(parsed);
 
-      // 2. ИИ ГЕНЕРИРУЕТ РЕАЛЬНОЕ ФОТО ПО ЗАПРОСУ
       setStatus('Шаг 2: DALL-E 3 рисует фотореалистичный рендер (10-15 сек)...');
-      const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+      // ИСПОЛЬЗУЕМ ПРОКСИ ВМЕСТО ПРЯМОЙ ССЫЛКИ
+      const imgRes = await fetch('/api/openai/v1/images/generations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({
